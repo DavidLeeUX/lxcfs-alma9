@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: lxcfsnotalma
+  labels:
+    app: lxcfs
+spec:
+  selector:
+    matchLabels:
+      app: lxcfs
+  template:
+    metadata:
+      labels:
+        app: lxcfs
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: sys
+                operator: NotIn
+                values:
+                - alma9
+      hostPID: true
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: lxcfs
+        image: lxcfs:3.1.2-changwei5-1
+        imagePullPolicy: Never
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+        - name: lxcfs
+          mountPath: /var/lib/lxcfs
+          mountPropagation: Bidirectional
+        - name: usr-local
+          mountPath: /usr/local
+        - name: usr-lib64
+          mountPath: /usr/lib64
+      volumes:
+      - name: cgroup
+        hostPath:
+          path: /sys/fs/cgroup
+      - name: usr-local
+        hostPath:
+          path: /usr/local
+      - name: usr-lib64
+        hostPath:
+          path: /usr/lib64
+      - name: lxcfs
+        hostPath:
+          path: /var/lib/lxcfs
+          type: DirectoryOrCreate
